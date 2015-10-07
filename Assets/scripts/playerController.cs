@@ -5,7 +5,9 @@ public class playerController : MonoBehaviour {
 
 	// public parameters
 	public float	walkSpeed,
-					pickupReach;
+					carryingSpeed,
+					pickupReach,
+					jumpForce;
 	public Vector3	carryingPosition;
 
 	// private variables
@@ -43,16 +45,21 @@ public class playerController : MonoBehaviour {
 				carrying = null;
 			}
 		}
+
+		// jump
+		if(Input.GetButtonDown("Jump") && Grounded()) {
+			GetComponent<Rigidbody>().AddForce(new Vector3(0, jumpForce, 0));
+		}
 	}
 
-	// fixedupdate (for physics stuff)
+	// fixedupdate
 	void FixedUpdate() {
 		// get player inputs
 		float h = Input.GetAxis("Horizontal");
 		float v = Input.GetAxis("Vertical");
 
 		// move player around
-		Vector3 movement = new Vector3(h*walkSpeed, 0, v*walkSpeed);
+		Vector3 movement = new Vector3(h, 0, v)*((carrying != null)?carryingSpeed:walkSpeed);
 		transform.position += movement;
 
 		// carrying and player rotation
@@ -71,5 +78,10 @@ public class playerController : MonoBehaviour {
 		float	aMagnitude = (transform.position - a.collider.transform.position).sqrMagnitude,
 				bMagnitude = (transform.position - b.collider.transform.position).sqrMagnitude;
 		return	aMagnitude.CompareTo(bMagnitude);
+	}
+
+	// return true if on the ground
+	bool Grounded() {
+		return Physics.Raycast(transform.position, Vector3.down, 1.1f);
 	}
 }
