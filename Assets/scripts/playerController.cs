@@ -6,10 +6,12 @@ public class playerController : MonoBehaviour {
 	// public parameters
 	public float	walkSpeed,
 					pickupReach;
+	public Vector3	carryingPosition;
 
 	// private variables
 	RaycastHit[]	pickups;
-	GameObject		pickup;
+	GameObject		pickup,
+					carrying;
 	LayerMask		pickupable;
 
 	// start
@@ -20,13 +22,26 @@ public class playerController : MonoBehaviour {
 	// update
 	void Update() {
 		// detect all pickupable objects around the player
-		pickups = Physics.SphereCastAll(transform.position, .8f, transform.forward, 1.2f, pickupable);
+		pickups = Physics.SphereCastAll(transform.position, pickupReach*.66f, transform.forward, pickupReach, pickupable);
 
 		// pick one (the closest) out of the pickupable objects
 		if(pickups.Length > 0) {
 			System.Array.Sort(pickups, SortByDistance);
 			pickup = pickups[0].collider.gameObject;
 			Debug.DrawLine(transform.position, pickup.transform.position);
+		}
+
+		// pick up or drop stuff
+		if(Input.GetButtonDown("Fire1")) {
+			if(carrying == null && pickups.Length > 0) {
+				// pick it up
+				carrying = pickup;
+				transform.LookAt(new Vector3(carrying.transform.position.x, transform.position.y, carrying.transform.position.z));
+				carrying.transform.position = transform.position + (Quaternion.Euler(0, transform.eulerAngles.y, 0) * carryingPosition);
+			} else {
+				// drop it
+				carrying = null;
+			}
 		}
 	}
 
@@ -40,9 +55,14 @@ public class playerController : MonoBehaviour {
 		Vector3 movement = new Vector3(h*walkSpeed, 0, v*walkSpeed);
 		transform.position += movement;
 
-		// rotate player if moving
-		if (movement.magnitude > .05) {
-			transform.LookAt (transform.position + movement);
+		// carrying and player rotation
+		if(carrying != null) {
+			// if we are carrying something, we move it and look at it
+			carrying.transform.position += movement;
+			transform.LookAt(new Vector3(carrying.transform.position.x, transform.position.y, carrying.transform.position.z));
+		} else if(movement.magnitude > .05) {
+			// if we're not carrying anything, we look ahead
+			transform.LookAt(transform.position + movement);
 		}
 	}
 	
